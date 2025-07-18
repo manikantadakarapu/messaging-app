@@ -1,14 +1,19 @@
 const express = require('express');
 const http = require('http');
-const mongoose = require('mongoose');
+const socketIO = require('socket.io');
 const cors = require('cors');
-const dotenv = require('dotenv');
-const { Server } = require('socket.io');
+const mongoose = require('mongoose');
 const authRoutes = require('./routes/authRoutes');
-
-dotenv.config();
+require('dotenv').config();
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIO(server, {
+  cors: {
+    origin: 'http://localhost:3000', // React app
+    methods: ['GET', 'POST'],
+  },
+});
 
 // Middleware
 app.use(cors());
@@ -17,40 +22,28 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 
-// Create HTTP server and attach Socket.IO
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: '*', // Change this in production to restrict origins
-    methods: ['GET', 'POST'],
-  },
-});
-
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-})
-.then(() => console.log('MongoDB connected'))
-.catch((err) => console.error('MongoDB connection error:', err));
+}).then(() => console.log('MongoDB connected'))
+  .catch((err) => console.error('MongoDB connection error:', err));
 
-// Handle Socket.IO connections
+// Socket.IO handling
 io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
+  console.log(`New client connected: ${socket.id}`);
 
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
+  socket.on('sendMessage', (data) => {
+    io.emit('receiveMessage', data); // Broadcast to all clients
   });
 
-  // Example: Handle chat messages
-  socket.on('chatMessage', (data) => {
-    console.log('Chat message received:', data);
-    io.emit('chatMessage', data); // Broadcast to all clients
+  socket.on('disconnect', () => {
+    console.log(`Client disconnected: ${socket.id}`);
   });
 });
 
-// PORT configuration
+// Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server listening on port ${PORT}`);
 });
