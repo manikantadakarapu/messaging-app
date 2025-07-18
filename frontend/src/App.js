@@ -16,7 +16,10 @@ function App() {
           path="/chat"
           element={
             <ProtectedRoute>
-              <Chat />
+              <Chat
+                token={localStorage.getItem('token')}
+                username={localStorage.getItem('username')}
+              />
             </ProtectedRoute>
           }
         />

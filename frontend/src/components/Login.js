@@ -10,7 +10,8 @@ const Login = () => {
     e.preventDefault();
     try {
       const res = await API.post('/auth/login', form);
-      localStorage.setItem('token', res.data.token); // Optional: implement token later
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('username', res.data.username); // save username for chat
       navigate('/chat');
     } catch (err) {
       alert(err.response?.data?.message || 'Login failed');
@@ -26,12 +27,14 @@ const Login = () => {
           placeholder="Email"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
+          required
         />
         <input
           type="password"
           placeholder="Password"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
+          required
         />
         <button type="submit">Login</button>
       </form>
